@@ -52,6 +52,19 @@ android {
 }
 
 dependencies {
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // Conversor de JSON (Gson)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // OkHttp (Generalmente se incluye con Retrofit, pero es bueno tenerlo explícito)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Kotlin DataStore Preferences (Para guardar el token de sesión)
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

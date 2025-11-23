@@ -4,29 +4,43 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.ejercicio.my_application_social.data.db.AppDatabase
-import com.ejercicio.my_application_social.data.model.Post
-import com.ejercicio.my_application_social.data.model.User
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import com.ejercicio.my_application_social.data.api.ApiService
+import com.ejercicio.my_application_social.data.model.* // Importa tus modelos (User, Post, AuthResponse, etc.)
+// ⚠️ CORRECCIÓN: Eliminamos la importación incorrecta de com.google.android.gms.games...AuthResponse
+// 👈 Añadido para asegurar la referencia correcta
+//import com.google.android.gms.games.gamessignin.AuthResponse
+
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+
+// 🚨 CORRECCIÓN: Quitamos las importaciones innecesarias o que causan conflicto en el helper del token
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runBlocking // Necesario para obtener el token si se llama fuera de un suspend (usaremos .first() dentro de suspend)
+
+
 
 val Context.dataStore by preferencesDataStore(name = "settings")
 
-// Repositorio Local-First (Usando Room)
-class Repository(private val db: AppDatabase, private val context: Context) {
+// Repositorio Basado en API (Flask Backend)
+class Repository(
+    private val apiService: ApiService,
+    private val context: Context
+) {
 
-    private val USER_ID_KEY = stringPreferencesKey("user_id")
+    private val USER_TOKEN_KEY = stringPreferencesKey("auth_token")
 
-    // Sesión basada en ID local
-    val currentUserId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
+    // --- UTILS DE SESIÓN (DataStore) ---
 
-    suspend fun saveSession(userId: Int) {
-        context.dataStore.edit { 
-            it[USER_ID_KEY] = userId.toString()
+    val currentAuthToken: Flow<String?> = context.dataStore.data.map { it[USER_TOKEN_KEY] }
+
+    suspend fun saveSession(token: String) {
+        context.dataStore.edit {
+            it[USER_TOKEN_KEY] = token
         }
     }
 
@@ -34,66 +48,114 @@ class Repository(private val db: AppDatabase, private val context: Context) {
         context.dataStore.edit { it.clear() }
     }
 
-    // --- AUTH ---
-    suspend fun login(email: String, pass: String): Result<User> {
-        val user = db.userDao().getUserByEmail(email)
-        return if (user != null && user.passwordHash == pass) {
-            Result.success(user)
-        } else {
-            Result.failure(Exception("Credenciales inválidas"))
-        }
+    // Función helper para construir el header 'Bearer token'
+    private suspend fun createBearerToken(): String {
+        // Usamos .first() dentro de suspend fun para obtener el valor del Flow.
+        val token = currentAuthToken.first()
+            ?: throw IllegalStateException("Token de autenticación no disponible.")
+        return "Bearer $token"
     }
 
-    suspend fun register(name: String, username: String, email: String, pass: String): Result<User> {
-        if (db.userDao().getUserByEmail(email) != null) return Result.failure(Exception("Email ya registrado"))
+    // =================================================================
+    // AUTHENTICATION (AUTH)
+    // =================================================================
 
-        val newUser = User(
-            name = name,
-            username = username,
-            email = email,
-            passwordHash = pass,
-            bio = "¡Hola! Soy nuevo aquí."
-        )
-        
-        try {
-            val id = db.userDao().insertUser(newUser)
-            return Result.success(newUser.copy(id = id.toInt()))
+    suspend fun login(request: LoginRequest): Result<AuthResponse> {
+        return try {
+            val response = apiService.login(request)
+            // 🚨 CORRECCIÓN: Si el servidor devuelve 200/201, extraemos el body. Si es null, es un error.
+            val authResponse = response.body() ?: throw IllegalStateException("Respuesta de login vacía")
+            saveSession(authResponse.token)
+            Result.success(authResponse)
         } catch (e: Exception) {
-            return Result.failure(e)
+            Result.failure(e)
         }
     }
-    
-    suspend fun getUserById(id: Int): User? = db.userDao().getUserById(id)
 
-    // --- POSTS ---
-    fun getAllPosts(): Flow<List<Post>> = db.postDao().getAllPosts()
-    
-    fun getUserPosts(userId: Int): Flow<List<Post>> = db.postDao().getPostsByUser(userId)
-
-    suspend fun createPost(userId: Int, desc: String, file: File) {
-        val user = db.userDao().getUserById(userId) ?: return
-        
-        val newPost = Post(
-            user_id = userId,
-            username = user.username,
-            user_avatar = user.avatar_url,
-            description = desc,
-            media_url = file.absolutePath, // Guardamos ruta absoluta para cargarla después
-            media_type = "image",
-            created_at = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
-        )
-        db.postDao().insertPost(newPost)
-    }
-    
-    suspend fun getPostById(postId: Int): Post? {
-        return db.postDao().getPostById(postId)
+    suspend fun register(request: RegisterRequest): Result<AuthResponse> {
+        return try {
+            val response = apiService.register(request)
+            val authResponse = response.body() ?: throw IllegalStateException("Respuesta de registro vacía")
+            saveSession(authResponse.token)
+            Result.success(authResponse)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    suspend fun updatePostDescription(postId: Int, description: String) {
-        db.postDao().updatePostDescription(postId, description)
+    // =================================================================
+    // USER PROFILE (USERS)
+    // =================================================================
+
+    suspend fun getMe(): User? {
+        val tokenHeader = createBearerToken()
+        // 🚨 CORRECCIÓN: Extraemos el cuerpo de la respuesta o devolvemos null
+        return apiService.getMe(tokenHeader).body()
+    }
+
+    suspend fun getUserById(id: Int): User? {
+        val tokenHeader = createBearerToken()
+        return apiService.getUser(tokenHeader, id).body()
+    }
+
+    suspend fun updateBio(newBio: String): User? {
+        val tokenHeader = createBearerToken()
+        val bioPart = newBio.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        return apiService.updateProfile(tokenHeader, bioPart).body()
+    }
+
+    suspend fun updateAvatar(file: File): User? {
+        val tokenHeader = createBearerToken()
+
+        val mediaType = file.extension.toMediaTypeOrNull() ?: "image/jpeg".toMediaTypeOrNull()
+        val requestFile = file.asRequestBody(mediaType)
+        val filePart = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        return apiService.updateAvatar(tokenHeader, filePart).body()
+    }
+
+    // =================================================================
+    // POSTS
+    // =================================================================
+
+    suspend fun getAllPosts(): List<Post> {
+        val tokenHeader = createBearerToken()
+        // 🚨 CORRECCIÓN: Extraemos el cuerpo o devolvemos lista vacía
+        return apiService.getPosts(tokenHeader).body() ?: emptyList()
+    }
+
+    suspend fun getUserPosts(userId: Int): List<Post> {
+        val tokenHeader = createBearerToken()
+        return apiService.getPostsByUser(tokenHeader, userId).body() ?: emptyList()
+    }
+
+    suspend fun createPost(desc: String, file: File): Post? {
+        val tokenHeader = createBearerToken()
+
+        val descriptionPart = desc.toRequestBody("text/plain".toMediaTypeOrNull())
+        val mediaType = file.extension.toMediaTypeOrNull() ?: "image/jpeg".toMediaTypeOrNull()
+        val requestFile = file.asRequestBody(mediaType)
+        val filePart = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        return apiService.createPost(tokenHeader, descriptionPart, filePart).body()
+    }
+
+    suspend fun updatePostDescription(postId: Int, description: String): Post? {
+        val tokenHeader = createBearerToken()
+        val descriptionPart = description.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        return apiService.updatePost(tokenHeader, postId, descriptionPart).body()
     }
 
     suspend fun deletePost(postId: Int) {
-        db.postDao().deletePost(postId)
+        val tokenHeader = createBearerToken()
+        // No necesita .body() porque Retrofit lo maneja como Response<Unit>
+        apiService.deletePost(tokenHeader, postId)
+    }
+    suspend fun getPostById(postId: Int): Post? {
+        val tokenHeader = createBearerToken()
+        // Llama al nuevo método de ApiService y extrae el cuerpo
+        return apiService.getPostById(tokenHeader, postId).body()
     }
 }

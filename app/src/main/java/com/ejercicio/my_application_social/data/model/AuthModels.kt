@@ -9,11 +9,16 @@ data class User(
     val name: String,
     val username: String,
     val email: String,
-    val passwordHash: String, // Guardaremos la contraseña aquí para el login local
+    val passwordHash: String,
     val bio: String? = null,
     val avatar_url: String? = null
 )
 
-// Modelos auxiliares para la UI (no se guardan en BD)
 data class LoginRequest(val email: String, val password: String)
 data class RegisterRequest(val name: String, val username: String, val email: String, val password: String)
+
+// 🚨 CÓDIGO FALTANTE: Debe tener 'token' y 'user_id'
+data class AuthResponse(
+    val token: String,
+    val user_id: Int
+)
