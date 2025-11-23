@@ -30,7 +30,7 @@ fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
         posts = posts,
         onBackClick = { nav.popBackStack() },
         onDeleteClick = { id -> viewModel.deletePost(id) },
-        onEditClick = { /* Navegar a editar */ }
+        onEditClick = { id -> nav.navigate("edit_post/$id") } // Fix: Navegar con argumento ID
     )
 }
 

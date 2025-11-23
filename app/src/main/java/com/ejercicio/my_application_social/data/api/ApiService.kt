@@ -1,6 +1,7 @@
 package com.ejercicio.my_application_social.data.api
 
 import com.ejercicio.my_application_social.data.model.*
+import com.google.android.gms.games.gamessignin.AuthResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response

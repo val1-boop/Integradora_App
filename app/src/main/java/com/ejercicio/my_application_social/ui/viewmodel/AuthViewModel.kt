@@ -2,8 +2,6 @@ package com.ejercicio.my_application_social.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ejercicio.my_application_social.data.model.LoginRequest
-import com.ejercicio.my_application_social.data.model.RegisterRequest
 import com.ejercicio.my_application_social.data.repository.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,41 +18,39 @@ class AuthViewModel(private val repository: Repository) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
     val state = _state.asStateFlow()
     
-    val isLoggedIn = repository.token
+    // En el repositorio local, esto es un Flow<String?> que es el ID del usuario
+    val isLoggedIn = repository.currentUserId
 
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _state.value = AuthState.Loading
-            try {
-                val response = repository.login(LoginRequest(email, pass))
-                if (response.isSuccessful && response.body() != null) {
-                    val auth = response.body()!!
-                    repository.saveSession(auth.access_token, auth.user_id)
+            val result = repository.login(email, pass)
+            result.fold(
+                onSuccess = { user ->
+                    // Guardamos el ID del usuario como sesión
+                    repository.saveSession(user.id)
                     _state.value = AuthState.Success
-                } else {
-                    _state.value = AuthState.Error("Error: ${response.code()}")
+                },
+                onFailure = { e ->
+                    _state.value = AuthState.Error(e.message ?: "Error desconocido")
                 }
-            } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Unknown error")
-            }
+            )
         }
     }
 
     fun register(name: String, user: String, email: String, pass: String) {
         viewModelScope.launch {
             _state.value = AuthState.Loading
-            try {
-                val response = repository.register(RegisterRequest(name, user, email, pass))
-                if (response.isSuccessful && response.body() != null) {
-                    val auth = response.body()!!
-                    repository.saveSession(auth.access_token, auth.user_id)
+            val result = repository.register(name, user, email, pass)
+            result.fold(
+                onSuccess = { newUser ->
+                    repository.saveSession(newUser.id)
                     _state.value = AuthState.Success
-                } else {
-                    _state.value = AuthState.Error("Error: ${response.code()}")
+                },
+                onFailure = { e ->
+                    _state.value = AuthState.Error(e.message ?: "Error desconocido")
                 }
-            } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Unknown error")
-            }
+            )
         }
     }
     

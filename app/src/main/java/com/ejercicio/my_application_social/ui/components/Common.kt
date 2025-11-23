@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ejercicio.my_application_social.data.model.Post
+import java.io.File
 
 @Composable
 fun PrimaryButton(text: String, onClick: () -> Unit, isLoading: Boolean = false) {
@@ -42,9 +43,12 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
             Text(text = "@${post.username}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(4.dp))
             
+            // Fix: Cargar imagen desde archivo local si existe, sino intentar URL (para compatibilidad)
+            val model = if (File(post.media_url).exists()) File(post.media_url) else post.media_url
+            
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data("http://10.0.2.2:8000${post.media_url}")
+                    .data(model)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,

@@ -8,42 +8,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ejercicio.my_application_social.data.api.ApiService
+import androidx.navigation.navArgument
+import com.ejercicio.my_application_social.data.db.AppDatabase
 import com.ejercicio.my_application_social.data.repository.Repository
 import com.ejercicio.my_application_social.ui.screens.*
 import com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme
 import com.ejercicio.my_application_social.ui.viewmodel.AuthViewModel
 import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // DI Manual (Simple)
-        val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
-        val client = OkHttpClient.Builder().addInterceptor(logging).build()
+        // 1. Inicializamos la base de datos Room (Local)
+        val db = AppDatabase.getDatabase(applicationContext)
         
-        // --- CAMBIAR IP AQUÍ ---
-        // Emulador: 10.0.2.2
-        // Físico: IP de tu PC (ej. 192.168.1.X)
-        val baseUrl = "http://10.0.2.2:8000/" 
-        
-        val api = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
+        // 2. Inicializamos el repositorio con la BD local
+        val repository = Repository(db, applicationContext)
 
-        val repository = Repository(api, applicationContext)
-
+        // 3. Configuración de ViewModels
         val viewModelFactory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(AuthViewModel::class.java)) return AuthViewModel(repository) as T
@@ -67,7 +55,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(authViewModel: AuthViewModel, postViewModel: PostViewModel) {
     val navController = rememberNavController()
     
-    // CORRECCIÓN: Obtenemos el token (String?) y verificamos si existe para decidir el destino inicial
+    // isLoggedIn es Flow<String?> (user ID local)
     val tokenState = authViewModel.isLoggedIn.collectAsState(initial = null)
     val startDestination = if (!tokenState.value.isNullOrEmpty()) "feed" else "login"
 
@@ -86,6 +74,13 @@ fun AppNavigation(authViewModel: AuthViewModel, postViewModel: PostViewModel) {
         }
         composable("my_posts") { 
             MyPostsScreen(navController, postViewModel) 
+        }
+        composable(
+            route = "edit_post/{postId}",
+            arguments = listOf(navArgument("postId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getInt("postId") ?: 0
+            EditPostScreen(navController, postViewModel, postId)
         }
         composable("profile") { 
             ProfileScreen(navController, postViewModel, authViewModel) 

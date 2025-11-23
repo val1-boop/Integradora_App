@@ -1,19 +1,19 @@
 package com.ejercicio.my_application_social.data.model
 
-data class LoginRequest(val email: String, val password: String)
-data class RegisterRequest(val name: String, val username: String, val email: String, val password: String)
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-data class AuthResponse(
-    val access_token: String,
-    val token_type: String,
-    val user_id: Int
-)
-
+@Entity(tableName = "users")
 data class User(
-    val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val username: String,
     val email: String,
-    val bio: String?,
-    val avatar_url: String?
+    val passwordHash: String, // Guardaremos la contraseña aquí para el login local
+    val bio: String? = null,
+    val avatar_url: String? = null
 )
+
+// Modelos auxiliares para la UI (no se guardan en BD)
+data class LoginRequest(val email: String, val password: String)
+data class RegisterRequest(val name: String, val username: String, val email: String, val password: String)

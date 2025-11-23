@@ -19,6 +19,7 @@ sealed class PostState {
 }
 
 class PostViewModel(private val repository: Repository) : ViewModel() {
+    // Usamos el repositorio local
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
     val posts = _posts.asStateFlow()
     
@@ -27,52 +28,43 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
 
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser = _currentUser.asStateFlow()
+    
+    private val _currentPost = MutableStateFlow<Post?>(null)
+    val currentPost = _currentPost.asStateFlow()
 
     private val _state = MutableStateFlow<PostState>(PostState.Idle)
     val state = _state.asStateFlow()
 
     fun getFeed() {
         viewModelScope.launch {
-            _state.value = PostState.Loading
-            try {
-                val token = repository.token.first() ?: return@launch
-                val res = repository.getPosts(token)
-                if (res.isSuccessful) {
-                    _posts.value = res.body() ?: emptyList()
-                    _state.value = PostState.Success
-                } else {
-                    _state.value = PostState.Error("Failed to load feed")
-                }
-            } catch (e: Exception) {
-                _state.value = PostState.Error(e.message ?: "Error")
+            // Recogemos el Flow de Room directamente
+            repository.getAllPosts().collect { localPosts ->
+                _posts.value = localPosts
             }
         }
     }
     
     fun getMyPosts() {
         viewModelScope.launch {
-            val token = repository.token.first() ?: return@launch
             val userIdStr = repository.currentUserId.first() ?: return@launch
             val userId = userIdStr.toIntOrNull() ?: return@launch
-            
-            try {
-                val res = repository.getUserPosts(token, userId)
-                if (res.isSuccessful) {
-                    _myPosts.value = res.body() ?: emptyList()
-                }
-            } catch (e: Exception) {}
+            repository.getUserPosts(userId).collect { userPosts ->
+                _myPosts.value = userPosts
+            }
         }
     }
     
     fun getProfile() {
         viewModelScope.launch {
-            val token = repository.token.first() ?: return@launch
-            try {
-                val res = repository.getMe(token)
-                if (res.isSuccessful) {
-                    _currentUser.value = res.body()
-                }
-            } catch (e: Exception) {}
+            val userIdStr = repository.currentUserId.first() ?: return@launch
+            val userId = userIdStr.toIntOrNull() ?: return@launch
+            _currentUser.value = repository.getUserById(userId)
+        }
+    }
+
+    fun getPostById(postId: Int) {
+        viewModelScope.launch {
+            _currentPost.value = repository.getPostById(postId)
         }
     }
 
@@ -80,45 +72,37 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                val token = repository.token.first() ?: return@launch
-                val res = repository.createPost(token, desc, file)
-                if (res.isSuccessful) {
-                    getFeed()
-                    _state.value = PostState.Success
-                } else {
-                    _state.value = PostState.Error("Error uploading")
-                }
+                val userIdStr = repository.currentUserId.first() ?: return@launch
+                val userId = userIdStr.toIntOrNull() ?: return@launch
+                
+                repository.createPost(userId, desc, file)
+                _state.value = PostState.Success
             } catch (e: Exception) {
-                _state.value = PostState.Error(e.message ?: "Error")
+                _state.value = PostState.Error(e.message ?: "Error al crear post")
+            }
+        }
+    }
+    
+    fun updatePost(id: Int, desc: String) {
+        viewModelScope.launch {
+            _state.value = PostState.Loading
+            try {
+                repository.updatePostDescription(id, desc)
+                _state.value = PostState.Success
+            } catch (e: Exception) {
+                _state.value = PostState.Error(e.message ?: "Error al actualizar")
             }
         }
     }
     
     fun deletePost(id: Int) {
         viewModelScope.launch {
-            val token = repository.token.first() ?: return@launch
-            repository.deletePost(token, id)
-            getMyPosts()
-            getFeed()
+            repository.deletePost(id)
         }
     }
     
-    fun updateProfile(bio: String, avatar: File?) {
-        viewModelScope.launch {
-            _state.value = PostState.Loading
-            try {
-                val token = repository.token.first() ?: return@launch
-                repository.updateProfile(token, bio)
-                if (avatar != null) {
-                    repository.updateAvatar(token, avatar)
-                }
-                getProfile()
-                _state.value = PostState.Success
-            } catch (e: Exception) {
-                _state.value = PostState.Error(e.message ?: "Error")
-            }
-        }
+    fun resetState() { 
+        _state.value = PostState.Idle 
+        _currentPost.value = null
     }
-    
-    fun resetState() { _state.value = PostState.Idle }
 }

@@ -4,29 +4,28 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.ejercicio.my_application_social.data.api.ApiService
-import com.ejercicio.my_application_social.data.model.*
+import com.ejercicio.my_application_social.data.db.AppDatabase
+import com.ejercicio.my_application_social.data.model.Post
+import com.ejercicio.my_application_social.data.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 val Context.dataStore by preferencesDataStore(name = "settings")
 
-class Repository(private val api: ApiService, private val context: Context) {
+// Repositorio Local-First (Usando Room)
+class Repository(private val db: AppDatabase, private val context: Context) {
 
-    private val TOKEN_KEY = stringPreferencesKey("jwt_token")
     private val USER_ID_KEY = stringPreferencesKey("user_id")
 
-    val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
+    // Sesión basada en ID local
     val currentUserId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
 
-    suspend fun saveSession(token: String, userId: Int) {
+    suspend fun saveSession(userId: Int) {
         context.dataStore.edit { 
-            it[TOKEN_KEY] = token
             it[USER_ID_KEY] = userId.toString()
         }
     }
@@ -35,29 +34,66 @@ class Repository(private val api: ApiService, private val context: Context) {
         context.dataStore.edit { it.clear() }
     }
 
-    suspend fun login(req: LoginRequest) = api.login(req)
-    suspend fun register(req: RegisterRequest) = api.register(req)
-    
-    suspend fun getPosts(token: String) = api.getPosts("Bearer $token")
-    suspend fun getUserPosts(token: String, id: Int) = api.getUserPosts("Bearer $token", id)
-    suspend fun getMe(token: String) = api.getMe("Bearer $token")
-    suspend fun getUser(token: String, id: Int) = api.getUser("Bearer $token", id)
+    // --- AUTH ---
+    suspend fun login(email: String, pass: String): Result<User> {
+        val user = db.userDao().getUserByEmail(email)
+        return if (user != null && user.passwordHash == pass) {
+            Result.success(user)
+        } else {
+            Result.failure(Exception("Credenciales inválidas"))
+        }
+    }
 
-    suspend fun createPost(token: String, desc: String, file: File): retrofit2.Response<Post> {
-        val descPart = desc.toRequestBody("text/plain".toMediaTypeOrNull())
-        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-        return api.createPost("Bearer $token", descPart, body)
+    suspend fun register(name: String, username: String, email: String, pass: String): Result<User> {
+        if (db.userDao().getUserByEmail(email) != null) return Result.failure(Exception("Email ya registrado"))
+
+        val newUser = User(
+            name = name,
+            username = username,
+            email = email,
+            passwordHash = pass,
+            bio = "¡Hola! Soy nuevo aquí."
+        )
+        
+        try {
+            val id = db.userDao().insertUser(newUser)
+            return Result.success(newUser.copy(id = id.toInt()))
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
     }
     
-    suspend fun deletePost(token: String, id: Int) = api.deletePost("Bearer $token", id)
+    suspend fun getUserById(id: Int): User? = db.userDao().getUserById(id)
+
+    // --- POSTS ---
+    fun getAllPosts(): Flow<List<Post>> = db.postDao().getAllPosts()
     
-    suspend fun updateProfile(token: String, bio: String) = 
-        api.updateProfile("Bearer $token", bio.toRequestBody("text/plain".toMediaTypeOrNull()))
+    fun getUserPosts(userId: Int): Flow<List<Post>> = db.postDao().getPostsByUser(userId)
+
+    suspend fun createPost(userId: Int, desc: String, file: File) {
+        val user = db.userDao().getUserById(userId) ?: return
         
-    suspend fun updateAvatar(token: String, file: File): retrofit2.Response<User> {
-        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-        return api.updateAvatar("Bearer $token", body)
+        val newPost = Post(
+            user_id = userId,
+            username = user.username,
+            user_avatar = user.avatar_url,
+            description = desc,
+            media_url = file.absolutePath, // Guardamos ruta absoluta para cargarla después
+            media_type = "image",
+            created_at = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+        )
+        db.postDao().insertPost(newPost)
+    }
+    
+    suspend fun getPostById(postId: Int): Post? {
+        return db.postDao().getPostById(postId)
+    }
+
+    suspend fun updatePostDescription(postId: Int, description: String) {
+        db.postDao().updatePostDescription(postId, description)
+    }
+
+    suspend fun deletePost(postId: Int) {
+        db.postDao().deletePost(postId)
     }
 }

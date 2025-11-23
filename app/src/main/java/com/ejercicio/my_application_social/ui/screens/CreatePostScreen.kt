@@ -1,18 +1,25 @@
 package com.ejercicio.my_application_social.ui.screens
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ejercicio.my_application_social.ui.components.PrimaryButton
+import com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme
 import com.ejercicio.my_application_social.ui.viewmodel.PostState
 import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 import java.io.File
@@ -24,11 +31,24 @@ import java.io.FileOutputStream
 fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
     var description by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        imageUri = uri
+    // URI temporal para la cámara
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher para Galería
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) imageUri = uri
+    }
+
+    // Launcher para Cámara
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            imageUri = tempCameraUri
+        }
     }
 
     LaunchedEffect(state) {
@@ -38,16 +58,46 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         }
     }
 
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Seleccionar imagen") },
+            text = { Text("¿Desde dónde quieres agregar la imagen?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImageSourceDialog = false
+                    // Crear archivo temporal para la cámara
+                    val tempFile = File.createTempFile("camera_img", ".jpg", context.cacheDir)
+                    tempCameraUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.provider",
+                        tempFile
+                    )
+                    cameraLauncher.launch(tempCameraUri!!)
+                }) {
+                    Text("Cámara")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImageSourceDialog = false
+                    galleryLauncher.launch("image/*")
+                }) {
+                    Text("Galería")
+                }
+            }
+        )
+    }
+
     CreatePostContent(
         description = description,
         onDescriptionChange = { description = it },
         imageUri = imageUri,
-        onSelectImageClick = { launcher.launch("image/*") },
+        onSelectImageClick = { showImageSourceDialog = true },
         isLoading = state is PostState.Loading,
         onPublishClick = {
             imageUri?.let { uri ->
-                // La lógica de conversión de archivo se mantiene aquí o se mueve al VM
-                // Por simplicidad en este refactor, la dejamos aquí pero idealmente va a una capa de utilidad
+                // Convertir URI a File
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val file = File.createTempFile("upload", ".jpg", context.cacheDir)
                 val outputStream = FileOutputStream(file)
@@ -80,33 +130,52 @@ fun CreatePostContent(
                 title = { Text("Crear Publicación") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        // Icono de cerrar o atrás
-                        Text("X", modifier = Modifier.padding(start = 12.dp)) 
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             ) 
         }
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp)) {
+        Column(
+            Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             OutlinedTextField(
                 value = description,
                 onValueChange = onDescriptionChange,
                 label = { Text("Descripción") },
-                modifier = Modifier.fillMaxWidth().height(150.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
             )
             Spacer(Modifier.height(16.dp))
             
-            Button(onClick = onSelectImageClick) {
-                Text("Seleccionar Imagen")
+            OutlinedButton(onClick = onSelectImageClick, modifier = Modifier.fillMaxWidth()) {
+                Text(if (imageUri == null) "Agregar Imagen" else "Cambiar Imagen")
             }
             
+            Spacer(Modifier.height(16.dp))
+
             if (imageUri != null) {
-                AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.height(200.dp))
+                AsyncImage(
+                    model = imageUri, 
+                    contentDescription = null, 
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                )
             }
             
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.weight(1f))
             
-            PrimaryButton(text = "Publicar", onClick = onPublishClick, isLoading = isLoading)
+            PrimaryButton(
+                text = "Publicar", 
+                onClick = onPublishClick, 
+                isLoading = isLoading
+            )
         }
     }
 }
@@ -115,7 +184,7 @@ fun CreatePostContent(
 @Preview
 @Composable
 fun CreatePostPreview() {
-    com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme {
+    PhotoFeedTheme {
         CreatePostContent(
             description = "Mi nueva foto",
             onDescriptionChange = {},
