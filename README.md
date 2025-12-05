@@ -1,39 +1,49 @@
 <div align="center">
 
-# 🎨✨ **EL XX**  
-### *Red Social Visual — Fotos, Videos y Conexiones Reales*
-
----
-
-🌈──────────────────────────────────────────────🌈  
-### **Conecta. Comparte. Expresa.**
-🌈──────────────────────────────────────────────🌈  
-
-</div>
+# ⚡🜂 **ＥＬ　ＸＸ** 🜁⚡  
+### *Red Social Visual del Futuro*
 
 <br>
 
-## 👨‍💻 Equipo de Desarrollo
+<img width="650" src="https://i.imgur.com/0h5U0uC.png"/>
+
+<br><br>
+
+🌌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌌  
+### **Conecta realidades. Comparte momentos. Expande tu mundo.**  
+🌌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌌  
+
+<br><br>
+
+</div>
+
+## 👨‍💻 Equipo de Desarrollo  
 - **Valera Carbajal Lagunas**  
 - **Luis Angel Castelar Hernández**
 
 ---
 
-## 📘 Descripción del Proyecto
-**El XX** es una red social enfocada en compartir fotos y videos, permitiendo que los usuarios conecten entre sí mediante contenido visual auténtico.
+## 🚀 Descripción del Proyecto  
+**EL XX** es una red social futurista enfocada en compartir **fotos y videos** para conectar a las personas mediante experiencias visuales reales, rápidas y directas.
 
-El objetivo principal es **facilitar la conexión entre personas usando medios visuales**, creando un espacio dinámico y accesible para publicar momentos, experiencias o ideas.
+La app resuelve la necesidad de un espacio **moderno, simple y visualmente poderoso** donde cualquiera puede publicar momentos sin complicaciones.
 
-La app utiliza el **sensor de cámara**, permitiendo:
-- Tomar fotos y videos directamente desde la aplicación.  
-- Usar esos archivos como publicaciones en tu perfil.  
-- Subir contenido de forma rápida y fluida dentro de la app.
+---
+
+## 🔮 Sensor Utilizado: Cámara  
+La aplicación integra el sensor de **cámara** del dispositivo para:
+
+- Capturar fotos y videos directamente desde la app.  
+- Publicar contenido al instante sin procesos tediosos.  
+- Subir archivos desde la galería sin salir de la interfaz.
+
+La experiencia es **fluida, inmersiva y futurista**, como debe ser.
 
 ---
 
 <div align="center">
 
-🌟 *“Una app simple, directa y hecha para mostrar lo que vives.”* 🌟  
-📷✨
+🌠 **ＥＬ　ＸＸ — La red social donde tu mundo se vuelve visual.** 🌠  
+📸✨
 
 </div>
