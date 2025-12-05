@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡🜂 **ＥＬ　ＸＸ** 🜁⚡  
+# ⚡ **ＥＬ　ＸＸ** ⚡  
 ### *Red Social Visual del Futuro*
 
 <br>
