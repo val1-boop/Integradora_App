@@ -5,7 +5,7 @@
 
 <br>
 
-<img width="650" src="https://i.imgur.com/0h5U0uC.png"/>
+<img width="650" src="https://dribbble.com/shots/25651094-XX-logo"/>
 
 <br><br>
 
