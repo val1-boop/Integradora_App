@@ -5,7 +5,7 @@
 
 <br>
 
-<img width="650" src="https://dribbble.com/shots/25651094-XX-logo"/>
+<img width="650" src="https://cdn.dribbble.com/userupload/31716217/file/original-fde07558b394e377787b09c36439507b.jpg?resize=1600x1200&vertical=center"/>
 
 <br><br>
 
