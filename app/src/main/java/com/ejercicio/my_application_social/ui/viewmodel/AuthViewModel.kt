@@ -2,12 +2,13 @@ package com.ejercicio.my_application_social.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ejercicio.my_application_social.data.model.LoginRequest // 👈 Importamos modelos de Request
-import com.ejercicio.my_application_social.data.model.RegisterRequest // 👈 Importamos modelos de Request
+import com.ejercicio.my_application_social.data.model.LoginRequest
+import com.ejercicio.my_application_social.data.model.RegisterRequest
 import com.ejercicio.my_application_social.data.repository.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -19,61 +20,67 @@ sealed class AuthState {
 class AuthViewModel(private val repository: Repository) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
     val state = _state.asStateFlow()
-
-    // Ahora devuelve el TOKEN (String?) de la sesión guardada
-    val isLoggedIn = repository.currentAuthToken
+    
+    val isLoggedIn = repository.token
 
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _state.value = AuthState.Loading
-
-            // 🚨 CAMBIO 1: Creamos el objeto de petición
-            val request = LoginRequest(email, pass)
-
-            // 🚨 CAMBIO 2: Llamamos al repositorio que usa Retrofit
-            val result = repository.login(request)
-
-            result.fold(
-                onSuccess = { authResponse ->
-                    // El Repository ya guarda el token internamente.
-                    // Solo confirmamos el éxito y navegamos.
+            try {
+                val response = repository.login(LoginRequest(email, pass))
+                
+                if (response.isSuccessful && response.body() != null) {
+                    val auth = response.body()!!
+                    // CORRECCIÓN: Usamos 'token' en lugar de 'access_token'
+                    repository.saveSession(auth.token, auth.user_id)
                     _state.value = AuthState.Success
-                },
-                onFailure = { e ->
-                    _state.value = AuthState.Error(e.message ?: "Credenciales inválidas o error de conexión")
+                } else {
+                    val errorMsg = parseError(response.errorBody()?.string())
+                    _state.value = AuthState.Error(errorMsg)
                 }
-            )
+            } catch (e: Exception) {
+                _state.value = AuthState.Error("Error de conexión: ${e.message}")
+            }
         }
     }
 
     fun register(name: String, user: String, email: String, pass: String) {
         viewModelScope.launch {
             _state.value = AuthState.Loading
-
-            // 🚨 CAMBIO 1: Creamos el objeto de petición
-            val request = RegisterRequest(name, user, email, pass)
-
-            // 🚨 CAMBIO 2: Llamamos al repositorio que usa Retrofit
-            val result = repository.register(request)
-
-            result.fold(
-                onSuccess = { authResponse ->
-                    // El Repository ya guarda el token internamente.
+            try {
+                val response = repository.register(RegisterRequest(name, user, email, pass))
+                
+                if (response.isSuccessful && response.body() != null) {
+                    val auth = response.body()!!
+                    // CORRECCIÓN: Usamos 'token' en lugar de 'access_token'
+                    repository.saveSession(auth.token, auth.user_id)
                     _state.value = AuthState.Success
-                },
-                onFailure = { e ->
-                    _state.value = AuthState.Error(e.message ?: "El email ya está en uso o error de conexión")
+                } else {
+                    val errorMsg = parseError(response.errorBody()?.string())
+                    _state.value = AuthState.Error(errorMsg)
                 }
-            )
+            } catch (e: Exception) {
+                _state.value = AuthState.Error("Error de conexión: ${e.message}")
+            }
         }
     }
-
+    
+    private fun parseError(json: String?): String {
+        return try {
+            if (json == null) return "Error desconocido"
+            val jsonObj = JSONObject(json)
+            jsonObj.optString("message", "Error del servidor")
+        } catch (e: Exception) {
+            json ?: "Error desconocido"
+        }
+    }
+    
     fun logout() {
         viewModelScope.launch {
             repository.clearSession()
             _state.value = AuthState.Idle
         }
     }
-
+    
     fun resetState() { _state.value = AuthState.Idle }
 }

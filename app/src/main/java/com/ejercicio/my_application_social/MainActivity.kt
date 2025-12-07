@@ -14,27 +14,38 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.ejercicio.my_application_social.data.api.NetworkModule // 👈 IMPORTANTE: Añadir NetworkModule
+import com.ejercicio.my_application_social.data.api.ApiService
 import com.ejercicio.my_application_social.data.repository.Repository
 import com.ejercicio.my_application_social.ui.screens.*
 import com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme
 import com.ejercicio.my_application_social.ui.viewmodel.AuthViewModel
 import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ❌ ELIMINADO: val db = AppDatabase.getDatabase(applicationContext)
+        // IMPORTANTE: Configuración para conectar con tu API Python
+        // Puerto 5000 es el que usa tu script (app.run(port=5000))
+        val baseUrl = "http://10.0.2.2:5000/" 
 
-        // 1. Inicializamos el repositorio con el ApiService y el Context
-        val repository = Repository(
-            apiService = NetworkModule.apiService, // 👈 USAMOS LA CONEXIÓN DE RED
-            context = applicationContext
-        )
+        val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
+        val client = OkHttpClient.Builder().addInterceptor(logging).build()
 
-        // 2. Configuración de ViewModels
-        // Usamos la misma fábrica, pero ahora el repositorio inyecta ApiService
+        val api = Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+
+        // Pasamos la API y la Base URL al repositorio para que sepa construir los links de imágenes
+        val repository = Repository(api, applicationContext, baseUrl)
+
         val viewModelFactory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(AuthViewModel::class.java)) return AuthViewModel(repository) as T
@@ -57,28 +68,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(authViewModel: AuthViewModel, postViewModel: PostViewModel) {
     val navController = rememberNavController()
-
-    // 🚨 CORRECCIÓN: Ahora el Repositorio expone currentAuthToken
-    val tokenState by authViewModel.isLoggedIn.collectAsState(initial = null)
-
-    // Si el token no es nulo o vacío, la sesión está activa.
-    val startDestination = if (!tokenState.isNullOrEmpty()) "feed" else "login"
+    
+    // Verificamos si hay token guardado
+    val tokenState = authViewModel.isLoggedIn.collectAsState(initial = null)
+    val startDestination = if (!tokenState.value.isNullOrEmpty()) "feed" else "login"
 
     NavHost(navController, startDestination = startDestination) {
-        composable("login") {
-            LoginScreen(navController, authViewModel)
+        composable("login") { 
+            LoginScreen(navController, authViewModel) 
         }
-        composable("register") {
-            RegisterScreen(navController, authViewModel)
+        composable("register") { 
+            RegisterScreen(navController, authViewModel) 
         }
-        composable("feed") {
-            FeedScreen(navController, postViewModel)
+        composable("feed") { 
+            FeedScreen(navController, postViewModel) 
         }
-        composable("create_post") {
-            CreatePostScreen(navController, postViewModel)
+        composable("create_post") { 
+            CreatePostScreen(navController, postViewModel) 
         }
-        composable("my_posts") {
-            MyPostsScreen(navController, postViewModel)
+        composable("my_posts") { 
+            MyPostsScreen(navController, postViewModel) 
         }
         composable(
             route = "edit_post/{postId}",
@@ -87,8 +96,8 @@ fun AppNavigation(authViewModel: AuthViewModel, postViewModel: PostViewModel) {
             val postId = backStackEntry.arguments?.getInt("postId") ?: 0
             EditPostScreen(navController, postViewModel, postId)
         }
-        composable("profile") {
-            ProfileScreen(navController, postViewModel, authViewModel)
+        composable("profile") { 
+            ProfileScreen(navController, postViewModel, authViewModel) 
         }
     }
 }
