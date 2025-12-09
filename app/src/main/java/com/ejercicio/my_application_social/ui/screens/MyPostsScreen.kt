@@ -43,32 +43,32 @@ fun MyPostsContent(
     onDeleteClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit
 ) {
-    PhotoFeedTheme (useDarkTheme = true) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Mis Publicaciones") },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
-                        }
+    PhotoFeedTheme(useDarkTheme = true){
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Mis Publicaciones") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
-                )
-            }
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                LazyColumn {
-                    items(posts) { post ->
-                        PostCard(
-                            post = post,
-                            isMine = true,
-                            onDelete = { onDeleteClick(post.id) },
-                            onEdit = { onEditClick(post.id) }
-                        )
-                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(Modifier.padding(padding)) {
+            LazyColumn {
+                items(posts) { post ->
+                    PostCard(
+                        post = post,
+                        isMine = true,
+                        onDelete = { onDeleteClick(post.id) },
+                        onEdit = { onEditClick(post.id) }
+                    )
                 }
             }
         }
+    }
     }
 }
 
@@ -79,7 +79,7 @@ fun MyPostsPreview() {
     val dummyPosts = listOf(
         Post(1, 1, "mi_usuario", null, "Mi primera foto", "", "image", "2023-10-20")
     )
-    PhotoFeedTheme  (useDarkTheme = true){
+    PhotoFeedTheme (useDarkTheme = true){
         MyPostsContent(posts = dummyPosts, onBackClick = {}, onDeleteClick = {}, onEditClick = {})
     }
 }

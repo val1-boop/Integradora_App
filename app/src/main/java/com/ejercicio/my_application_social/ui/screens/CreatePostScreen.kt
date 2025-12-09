@@ -53,8 +53,14 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
 
     LaunchedEffect(state) {
         if (state is PostState.Success) {
-            viewModel.resetState()
             nav.popBackStack()
+            viewModel.resetState()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetState()
         }
     }
 
@@ -124,60 +130,58 @@ fun CreatePostContent(
     onPublishClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    PhotoFeedTheme (useDarkTheme = true) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Crear Publicación") },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
-                        }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Crear Publicación") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
-                )
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedTextField(
+                value = description,
+                onValueChange = onDescriptionChange,
+                label = { Text("Descripción") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedButton(onClick = onSelectImageClick, modifier = Modifier.fillMaxWidth()) {
+                Text(if (imageUri == null) "Agregar Imagen" else "Cambiar Imagen")
             }
-        ) { padding ->
-            Column(
-                Modifier
-                    .padding(padding)
-                    .padding(16.dp)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = onDescriptionChange,
-                    label = { Text("Descripción") },
+
+            Spacer(Modifier.height(16.dp))
+
+            if (imageUri != null) {
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
-                )
-                Spacer(Modifier.height(16.dp))
-
-                OutlinedButton(onClick = onSelectImageClick, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (imageUri == null) "Agregar Imagen" else "Cambiar Imagen")
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                if (imageUri != null) {
-                    AsyncImage(
-                        model = imageUri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                    )
-                }
-
-                Spacer(Modifier.weight(1f))
-
-                PrimaryButton(
-                    text = "Publicar",
-                    onClick = onPublishClick,
-                    isLoading = isLoading
+                        .height(250.dp)
                 )
             }
+
+            Spacer(Modifier.weight(1f))
+
+            PrimaryButton(
+                text = "Publicar",
+                onClick = onPublishClick,
+                isLoading = isLoading
+            )
         }
     }
 }
@@ -186,7 +190,7 @@ fun CreatePostContent(
 @Preview
 @Composable
 fun CreatePostPreview() {
-    PhotoFeedTheme (useDarkTheme = true) {
+    PhotoFeedTheme(useDarkTheme = true) {
         CreatePostContent(
             description = "Mi nueva foto",
             onDescriptionChange = {},
