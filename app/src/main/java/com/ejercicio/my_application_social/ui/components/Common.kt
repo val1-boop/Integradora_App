@@ -40,24 +40,50 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(10.dp)) {
-            Text(text = "@${post.username}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(
+                text = "@${post.username.takeIf { it.isNotBlank() } ?: "usuario"}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(4.dp))
             
-            // Fix: Cargar imagen desde archivo local si existe, sino intentar URL (para compatibilidad)
-            val model = if (File(post.media_url).exists()) File(post.media_url) else post.media_url
-            
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(model)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(250.dp),
-                contentScale = ContentScale.Crop
-            )
+            if (post.media_url.isNotBlank()) {
+                val context = LocalContext.current
+                val model = try {
+                    if (File(post.media_url).exists()) {
+                        File(post.media_url)
+                    } else {
+                        post.media_url
+                    }
+                } catch (e: Exception) {
+                    println("[PostCard] Error procesando URL: ${e.message}")
+                    post.media_url
+                }
+                
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(model)
+                        .size(1080, 1080)
+                        .crossfade(false)
+                        .listener(
+                            onError = { _, result ->
+                                println("[PostCard] Error cargando imagen ID ${post.id}: ${result.throwable.message}")
+                            },
+                            onSuccess = { _, _ ->
+                                println("[PostCard] Imagen ID ${post.id} cargada")
+                            }
+                        )
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(250.dp),
+                    contentScale = ContentScale.Crop,
+                    error = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery),
+                    placeholder = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery)
+                )
+            }
             
             Spacer(Modifier.height(8.dp))
-            Text(text = post.description)
+            Text(text = post.description.takeIf { it.isNotBlank() } ?: "Sin descripción")
             
             if (isMine) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {

@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.key
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,36 +29,48 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
     val posts by viewModel.posts.collectAsState()
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var hasError by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.getFeed()
     }
 
     LaunchedEffect(state) {
-        when (val currentState = state) {
+        when (state) {
             is PostState.Error -> {
+                hasError = true
                 snackbarHostState.showSnackbar(
-                    message = currentState.msg,
+                    message = (state as PostState.Error).msg,
                     actionLabel = "OK"
                 )
                 viewModel.resetState()
             }
             is PostState.Success -> {
-                viewModel.getFeed()
-                viewModel.resetState()
+                hasError = false
             }
             else -> {}
         }
     }
 
-    PhotoFeedTheme(useDarkTheme = true) {
-        FeedContent(
-            posts = posts,
-            isLoading = state is PostState.Loading,
-            onCreatePostClick = { nav.navigate("create_post") },
-            onProfileClick = { nav.navigate("profile") },
-            snackbarHostState = snackbarHostState
-        )
+    if (hasError) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Error al cargar el feed")
+                Button(onClick = { viewModel.getFeed() }) {
+                    Text("Reintentar")
+                }
+            }
+        }
+    } else {
+        PhotoFeedTheme(useDarkTheme = true) {
+            FeedContent(
+                posts = posts,
+                isLoading = state is PostState.Loading,
+                onCreatePostClick = { nav.navigate("create_post") },
+                onProfileClick = { nav.navigate("profile") },
+                snackbarHostState = snackbarHostState
+            )
+        }
     }
 }
 
@@ -98,8 +112,13 @@ fun FeedContent(
                 Text("No hay publicaciones, ¡sé el primero!", Modifier.align(Alignment.Center))
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    items(posts) { post ->
-                        PostCard(post = post)
+                    items(
+                        items = posts.filter { it.id > 0 },
+                        key = { post -> post.id }
+                    ) { post ->
+                        key(post.id) {
+                            PostCard(post = post)
+                        }
                     }
                 }
             }

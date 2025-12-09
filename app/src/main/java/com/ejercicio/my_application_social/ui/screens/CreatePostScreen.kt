@@ -53,8 +53,9 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
 
     LaunchedEffect(state) {
         if (state is PostState.Success) {
-            nav.popBackStack()
+            println("[CreatePostScreen] Post creado exitosamente, navegando al feed")
             viewModel.resetState()
+            nav.popBackStack()
         }
     }
 

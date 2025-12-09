@@ -42,11 +42,14 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                // 🚨 CORRECCIÓN: Llamamos a la función suspend de la API
+                println("[PostViewModel] Cargando feed...")
                 val fetchedPosts = repository.getAllPosts()
+                println("[PostViewModel] Feed cargado: ${fetchedPosts.size} posts")
                 _posts.value = fetchedPosts
                 _state.value = PostState.Success
             } catch (e: Exception) {
+                println("[PostViewModel] Error al cargar feed: ${e.message}")
+                e.printStackTrace()
                 _state.value = PostState.Error(e.message ?: "Error al cargar el Feed")
             }
         }
@@ -106,17 +109,18 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                // 🚨 CORRECCIÓN: Llamamos a la función API con el archivo
+                println("[PostViewModel] Creando post...")
                 val newPost = repository.createPost(desc, file)
+                println("[PostViewModel] Post creado: ${newPost?.id}")
 
                 if (newPost != null) {
-                    // Opcional: Actualizar el feed o lista localmente si la subida fue exitosa
-                    // getFeed()
                     _state.value = PostState.Success
                 } else {
                     _state.value = PostState.Error("Error: Post vacío o fallo en el servidor.")
                 }
             } catch (e: Exception) {
+                println("[PostViewModel] Error al crear post: ${e.message}")
+                e.printStackTrace()
                 _state.value = PostState.Error(e.message ?: "Error al crear post")
             }
         }
