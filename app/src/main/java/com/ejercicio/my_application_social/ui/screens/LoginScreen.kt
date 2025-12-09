@@ -1,10 +1,12 @@
 package com.ejercicio.my_application_social.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,13 +30,15 @@ fun LoginScreen(nav: NavController, viewModel: AuthViewModel) {
         }
     }
 
-    // Llamamos al contenido visual pasando los datos y eventos
-    LoginContent(
-        isLoading = state is AuthState.Loading,
-        errorMsg = (state as? AuthState.Error)?.msg,
-        onLoginClick = { email, pass -> viewModel.login(email, pass) },
-        onRegisterClick = { nav.navigate("register") }
-    )
+    PhotoFeedTheme (useDarkTheme = false) {
+        // Llamamos al contenido visual pasando los datos y eventos
+        LoginContent(
+            isLoading = state is AuthState.Loading,
+            errorMsg = (state as? AuthState.Error)?.msg,
+            onLoginClick = { email, pass -> viewModel.login(email, pass) },
+            onRegisterClick = { nav.navigate("register") }
+        )
+    }
 }
 
 // 2. Composable Visual (Sin ViewModel, solo UI)
@@ -94,7 +98,7 @@ fun LoginContent(
 @Preview(showBackground = true)
 @Composable
 fun LoginPreview() {
-    PhotoFeedTheme {
+    PhotoFeedTheme(useDarkTheme = false) {
         LoginContent(
             isLoading = false,
             errorMsg = null,

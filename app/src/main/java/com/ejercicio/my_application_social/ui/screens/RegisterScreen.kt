@@ -27,14 +27,16 @@ fun RegisterScreen(nav: NavController, viewModel: AuthViewModel) {
         }
     }
 
-    RegisterContent(
-        isLoading = state is AuthState.Loading,
-        errorMsg = (state as? AuthState.Error)?.msg,
-        onRegisterClick = { name, user, email, pass -> 
-            viewModel.register(name, user, email, pass)
-        },
-        onBackClick = { nav.popBackStack() }
-    )
+    PhotoFeedTheme (useDarkTheme = false) {
+        RegisterContent(
+            isLoading = state is AuthState.Loading,
+            errorMsg = (state as? AuthState.Error)?.msg,
+            onRegisterClick = { name, user, email, pass ->
+                viewModel.register(name, user, email, pass)
+            },
+            onBackClick = { nav.popBackStack() }
+        )
+    }
 }
 
 // Stateless
@@ -90,7 +92,7 @@ fun RegisterContent(
 @Preview(showBackground = true)
 @Composable
 fun RegisterPreview() {
-    PhotoFeedTheme {
+    PhotoFeedTheme(useDarkTheme = false) {
         RegisterContent(isLoading = false, errorMsg = null, onRegisterClick = {_,_,_,_ ->}, onBackClick = {})
     }
 }

@@ -3,6 +3,7 @@ package com.ejercicio.my_application_social.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -30,14 +31,33 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = OnSurface
 )
 
+// --- AÑADIR: Colores para el tema Claro ---
+// Estos colores se usarán en Login/Register
+private val LightColorScheme = lightColorScheme(
+    primary = Primary, // Puedes usar el mismo morado como primario
+    secondary = Secondary,
+    tertiary = Pink80,
+    background = Color.White, // Fondo blanco
+    surface = Color.White,    // Superficie blanca
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+    onBackground = Color.Black, // ¡Importante! Texto sobre fondo será negro
+    onSurface = Color.Black     // ¡Importante! Texto sobre superficie será negro
+)
 @Composable
 fun PhotoFeedTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    useDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val colorScheme = if(useDarkTheme){
+        DarkColorScheme
+    }else{
+        LightColorScheme
+    }
     // Forzamos Dark Theme por diseño
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = colorScheme,
         content = content
     )
 }
