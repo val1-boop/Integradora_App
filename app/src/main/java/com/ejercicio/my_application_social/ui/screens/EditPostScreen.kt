@@ -43,62 +43,65 @@ fun EditPostScreen(nav: NavController, viewModel: PostViewModel, postId: Int) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Editar Publicación") },
-                navigationIcon = {
-                    IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+    PhotoFeedTheme (useDarkTheme = true) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Editar Publicación") },
+                    navigationIcon = {
+                        IconButton(onClick = { nav.popBackStack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        if (post != null) {
-            Column(
-                Modifier
-                    .padding(padding)
-                    .padding(16.dp)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val model = if (File(post!!.media_url).exists()) File(post!!.media_url) else post!!.media_url
-                
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(model)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp),
-                    contentScale = ContentScale.Crop
-                )
-                
-                Spacer(Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Descripción") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                )
-                
-                Spacer(Modifier.height(24.dp))
-                
-                PrimaryButton(
-                    text = "Guardar Cambios",
-                    onClick = { viewModel.updatePost(post!!.id, description) },
-                    isLoading = state is PostState.Loading
                 )
             }
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        ) { padding ->
+            if (post != null) {
+                Column(
+                    Modifier
+                        .padding(padding)
+                        .padding(16.dp)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val model =
+                        if (File(post!!.media_url).exists()) File(post!!.media_url) else post!!.media_url
+
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(model)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Descripción") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    PrimaryButton(
+                        text = "Guardar Cambios",
+                        onClick = { viewModel.updatePost(post!!.id, description) },
+                        isLoading = state is PostState.Loading
+                    )
+                }
+            } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

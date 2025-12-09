@@ -49,55 +49,57 @@ fun ProfileContent(
     onMyPostsClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mi Perfil") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+    PhotoFeedTheme (useDarkTheme = true) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Mi Perfil") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (user != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("http://10.0.2.2:8000${user.avatar_url}")
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier.size(120.dp),
-                    contentScale = ContentScale.Crop
                 )
-                Spacer(Modifier.height(16.dp))
-                Text("@${user.username}", style = MaterialTheme.typography.headlineSmall)
-                Text(user.name, style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(8.dp))
-                Text(user.bio ?: "Sin descripción", style = MaterialTheme.typography.bodyMedium)
+            }
+        ) { padding ->
+            Column(
+                Modifier
+                    .padding(padding)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (user != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("http://10.0.2.2:8000${user.avatar_url}")
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text("@${user.username}", style = MaterialTheme.typography.headlineSmall)
+                    Text(user.name, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(8.dp))
+                    Text(user.bio ?: "Sin descripción", style = MaterialTheme.typography.bodyMedium)
 
-                Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(32.dp))
 
-                PrimaryButton(text = "Ver Mis Publicaciones", onClick = onMyPostsClick)
-                Spacer(Modifier.height(16.dp))
+                    PrimaryButton(text = "Ver Mis Publicaciones", onClick = onMyPostsClick)
+                    Spacer(Modifier.height(16.dp))
 
-                OutlinedButton(
-                    onClick = onLogoutClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Cerrar Sesión")
-                }
-            } else {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    OutlinedButton(
+                        onClick = onLogoutClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cerrar Sesión")
+                    }
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
@@ -111,7 +113,7 @@ fun ProfilePreview() {
     val dummyUser = User(
         1, "Juan Pérez", "juanp", "juan@test.com", "Amante de la fotografía", null
     )
-    PhotoFeedTheme {
+    PhotoFeedTheme (useDarkTheme = true){
         ProfileContent(user = dummyUser, onBackClick = {}, onMyPostsClick = {}, onLogoutClick = {})
     }
 }

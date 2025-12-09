@@ -27,11 +27,13 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
         viewModel.getFeed()
     }
 
-    FeedContent(
-        posts = posts,
-        onCreatePostClick = { nav.navigate("create_post") },
-        onProfileClick = { nav.navigate("profile") }
-    )
+    PhotoFeedTheme (useDarkTheme = true) {
+        FeedContent(
+            posts = posts,
+            onCreatePostClick = { nav.navigate("create_post") },
+            onProfileClick = { nav.navigate("profile") }
+        )
+    }
 }
 
 // Stateless
@@ -80,7 +82,7 @@ fun FeedPreview() {
         Post(1, 1, "usuario_demo", null, "Esta es una descripción de prueba", "", "image", "2023-10-20"),
         Post(2, 2, "otro_user", null, "Foto increíble!", "", "image", "2023-10-21")
     )
-    PhotoFeedTheme {
+    PhotoFeedTheme (useDarkTheme = true){
         FeedContent(posts = dummyPosts, onCreatePostClick = {}, onProfileClick = {})
     }
 }

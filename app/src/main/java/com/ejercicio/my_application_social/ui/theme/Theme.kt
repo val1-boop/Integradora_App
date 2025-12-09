@@ -55,7 +55,7 @@ fun PhotoFeedTheme(
     }else{
         LightColorScheme
     }
-    // Forzamos Dark Theme por diseño
+
     MaterialTheme(
         colorScheme = colorScheme,
         content = content
