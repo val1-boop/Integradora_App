@@ -22,7 +22,7 @@ import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
     val posts by viewModel.myPosts.collectAsState()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.currentBackStackEntry) {
         viewModel.getMyPosts()
     }
 

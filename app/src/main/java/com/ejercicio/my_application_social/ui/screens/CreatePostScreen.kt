@@ -1,9 +1,12 @@
 package com.ejercicio.my_application_social.ui.screens
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -32,28 +35,47 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
     var description by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
+    var showPermissionDenied by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
 
-    // URI temporal para la cámara
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Launcher para Galería
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) imageUri = uri
     }
 
-    // Launcher para Cámara
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
+        if (success && tempCameraUri != null) {
             imageUri = tempCameraUri
+        }
+        tempCameraUri = null
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val tempFile = File.createTempFile("camera_img", ".jpg", context.cacheDir)
+            tempCameraUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                tempFile
+            )
+            cameraLauncher.launch(tempCameraUri!!)
+        } else {
+            showPermissionDenied = true
         }
     }
 
     LaunchedEffect(state) {
         if (state is PostState.Success) {
             println("[CreatePostScreen] Post creado exitosamente, navegando al feed")
+            imageUri = null
+            tempCameraUri = null
+            description = ""
+            System.gc()
             viewModel.resetState()
             nav.popBackStack()
         }
@@ -73,14 +95,18 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
-                    // Crear archivo temporal para la cámara
-                    val tempFile = File.createTempFile("camera_img", ".jpg", context.cacheDir)
-                    tempCameraUri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.provider",
-                        tempFile
-                    )
-                    cameraLauncher.launch(tempCameraUri!!)
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
+                            val tempFile = File.createTempFile("camera_img", ".jpg", context.cacheDir)
+                            tempCameraUri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                tempFile
+                            )
+                            cameraLauncher.launch(tempCameraUri!!)
+                        }
+                        else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
                 }) {
                     Text("Cámara")
                 }
@@ -96,6 +122,19 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         )
     }
 
+    if (showPermissionDenied) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDenied = false },
+            title = { Text("Permiso denegado") },
+            text = { Text("Se necesita permiso de cámara para tomar fotos. Puedes habilitarlo en Configuración.") },
+            confirmButton = {
+                TextButton(onClick = { showPermissionDenied = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     CreatePostContent(
         description = description,
         onDescriptionChange = { description = it },
@@ -104,15 +143,21 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         isLoading = state is PostState.Loading,
         onPublishClick = {
             imageUri?.let { uri ->
-                // Convertir URI a File
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val file = File.createTempFile("upload", ".jpg", context.cacheDir)
-                val outputStream = FileOutputStream(file)
-                inputStream?.copyTo(outputStream)
-                inputStream?.close()
-                outputStream.close()
-                
-                viewModel.createPost(description, file)
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val file = File.createTempFile("upload", ".jpg", context.cacheDir)
+                    val outputStream = FileOutputStream(file)
+                    inputStream?.copyTo(outputStream)
+                    inputStream?.close()
+                    outputStream.close()
+                    
+                    viewModel.createPost(description, file)
+                    
+                    imageUri = null
+                    description = ""
+                } catch (e: Exception) {
+                    println("[CreatePostScreen] Error al procesar imagen: ${e.message}")
+                }
             }
         },
         onBackClick = { nav.popBackStack() }

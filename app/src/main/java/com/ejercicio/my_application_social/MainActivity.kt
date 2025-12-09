@@ -33,13 +33,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         return ImageLoader.Builder(this)
             .memoryCache {
                 MemoryCache.Builder(this)
-                    .maxSizePercent(0.15)
+                    .maxSizePercent(0.10)
                     .build()
             }
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache"))
-                    .maxSizeBytes(30 * 1024 * 1024)
+                    .maxSizeBytes(20 * 1024 * 1024)
                     .build()
             }
             .networkCachePolicy(CachePolicy.ENABLED)
@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             .memoryCachePolicy(CachePolicy.ENABLED)
             .respectCacheHeaders(false)
             .crossfade(false)
+            .allowHardware(false)
             .build()
     }
     

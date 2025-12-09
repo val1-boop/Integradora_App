@@ -145,11 +145,10 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
     fun deletePost(id: Int) {
         viewModelScope.launch {
             try {
-                // 🚨 CORRECCIÓN: Llamamos a la función API
                 repository.deletePost(id)
-                getFeed() // Refrescar el feed
+                getMyPosts()
             } catch (e: Exception) {
-                // Manejar error si la eliminación falla
+                _state.value = PostState.Error(e.message ?: "Error al eliminar")
             }
         }
     }

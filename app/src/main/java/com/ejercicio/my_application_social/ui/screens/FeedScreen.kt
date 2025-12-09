@@ -113,7 +113,7 @@ fun FeedContent(
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(
-                        items = posts.filter { it.id > 0 },
+                        items = posts.filter { it.id > 0 }.take(20),
                         key = { post -> post.id }
                     ) { post ->
                         key(post.id) {

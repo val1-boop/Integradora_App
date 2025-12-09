@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 // IMPORTANTE:
 // - Para el Emulador de Android Studio (AVD): usa 10.0.2.2
 // - Para un Dispositivo Android Físico: usa tu IP local (ej: 192.168.1.5)
-private const val BASE_URL = "http://192.168.111.154:5000/"//cambiar direccion de acuerdo a la red en la que se encuentra
+private const val BASE_URL = "http://192.168.100.89:5000/"//cambiar direccion de acuerdo a la red en la que se encuentra
 
 /**
  * Objeto Kotlin que inicializa Retrofit y el ApiService.
