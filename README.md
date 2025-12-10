@@ -18,13 +18,13 @@
 </div>
 
 ## 👨‍💻 Equipo de Desarrollo  
-- **Valera Carbajal Lagunas**  
+- **Valeria Lagunas  Carbajal**  
 - **Luis Angel Castelar Hernández**
 
 ---
 
 ## 🚀 Descripción del Proyecto  
-**EL XX** es una red social futurista enfocada en compartir **fotos y videos** para conectar a las personas mediante experiencias visuales reales, rápidas y directas.
+**EL XX** es una red social futurista enfocada en compartir **fotos** para conectar a las personas mediante experiencias visuales reales, rápidas y directas.
 
 La app resuelve la necesidad de un espacio **moderno, simple y visualmente poderoso** donde cualquiera puede publicar momentos sin complicaciones.
 
@@ -33,7 +33,7 @@ La app resuelve la necesidad de un espacio **moderno, simple y visualmente poder
 ## 🔮 Sensor Utilizado: Cámara  
 La aplicación integra el sensor de **cámara** del dispositivo para:
 
-- Capturar fotos y videos directamente desde la app.  
+- Capturar fotos directamente desde la app.  
 - Publicar contenido al instante sin procesos tediosos.  
 - Subir archivos desde la galería sin salir de la interfaz.
 
