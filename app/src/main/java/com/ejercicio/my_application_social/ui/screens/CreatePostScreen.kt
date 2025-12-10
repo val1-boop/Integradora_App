@@ -42,6 +42,10 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
 
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) imageUri = uri
+    }
+
     val galleryPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -50,10 +54,6 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         } else {
             showPermissionDenied = true
         }
-    }
-
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) imageUri = uri
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->

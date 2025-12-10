@@ -22,7 +22,6 @@ import com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme
 import com.ejercicio.my_application_social.ui.viewmodel.PostState
 import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 
-// Stateful
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
@@ -74,7 +73,6 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
 
 }
 
-// Stateless
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedContent(
@@ -126,7 +124,6 @@ fun FeedContent(
     }
 }
 
-// Preview
 @Preview(showBackground = true)
 @Composable
 fun FeedPreview() {

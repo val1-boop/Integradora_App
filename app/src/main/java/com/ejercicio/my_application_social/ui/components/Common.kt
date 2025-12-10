@@ -96,7 +96,7 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
                     .clickable { showFullImage = false },
                 contentAlignment = Alignment.Center
             ) {
-                val context = LocalContext.current
+                LocalContext.current
                 val model = try {
                     if (File(post.media_url).exists()) File(post.media_url) else post.media_url
                 } catch (e: Exception) {

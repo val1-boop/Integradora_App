@@ -16,33 +16,23 @@ import com.ejercicio.my_application_social.ui.components.PostCard
 import com.ejercicio.my_application_social.ui.theme.PhotoFeedTheme
 import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 
-// Stateful
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
     val posts by viewModel.myPosts.collectAsState()
-    var isNavigating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.getMyPosts()
-        isNavigating = false
     }
 
     MyPostsContent(
         posts = posts,
         onBackClick = { nav.popBackStack() },
         onDeleteClick = { id -> viewModel.deletePost(id) },
-        onEditClick = { id ->
-            if (!isNavigating) {
-                isNavigating = true
-                nav.navigate("edit_post/$id")
-            }
-        }
+        onEditClick = { id -> nav.navigate("edit_post/$id") }
     )
-
 }
 
-// Stateless
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPostsContent(
@@ -80,7 +70,6 @@ fun MyPostsContent(
     }
 }
 
-// Preview
 @Preview
 @Composable
 fun MyPostsPreview() {

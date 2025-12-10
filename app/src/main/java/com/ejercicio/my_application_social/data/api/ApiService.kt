@@ -7,46 +7,18 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
-
-    // --- AUTH ---
-
     @POST("/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
     @POST("/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
-    // --- USERS ---
-
     @GET("/users/me")
     suspend fun getMe(@Header("Authorization") token: String): Response<User>
-
-    @GET("/users/{userId}")
-    suspend fun getUser(
-        @Header("Authorization") token: String,
-        @Path("userId") userId: Int
-    ): Response<User>
-
-    @Multipart
-    @PUT("/users/me")
-    suspend fun updateProfile(
-        @Header("Authorization") token: String,
-        @Part("bio") bio: RequestBody
-    ): Response<User>
-
-    @Multipart
-    @PUT("/users/me/avatar")
-    suspend fun updateAvatar(
-        @Header("Authorization") token: String,
-        @Part file: MultipartBody.Part
-    ): Response<User>
-
-    // --- POSTS ---
 
     @GET("/posts")
     suspend fun getPosts(@Header("Authorization") token: String): Response<List<Post>>
 
-    // 🚨 MÉTODO FALTANTE: Resuelve el error de la línea 130
     @GET("/users/{userId}/posts")
     suspend fun getPostsByUser(
         @Header("Authorization") token: String,

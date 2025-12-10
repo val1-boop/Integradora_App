@@ -93,28 +93,6 @@ class Repository(
         return apiService.getMe(tokenHeader).body()
     }
 
-    suspend fun getUserById(id: Int): User? {
-        val tokenHeader = createBearerToken()
-        return apiService.getUser(tokenHeader, id).body()
-    }
-
-    suspend fun updateBio(newBio: String): User? {
-        val tokenHeader = createBearerToken()
-        val bioPart = newBio.toRequestBody("text/plain".toMediaTypeOrNull())
-
-        return apiService.updateProfile(tokenHeader, bioPart).body()
-    }
-
-    suspend fun updateAvatar(file: File): User? {
-        val tokenHeader = createBearerToken()
-
-        val mediaType = file.extension.toMediaTypeOrNull() ?: "image/jpeg".toMediaTypeOrNull()
-        val requestFile = file.asRequestBody(mediaType)
-        val filePart = MultipartBody.Part.createFormData("file", file.name, requestFile)
-
-        return apiService.updateAvatar(tokenHeader, filePart).body()
-    }
-
     // =================================================================
     // POSTS
     // =================================================================
