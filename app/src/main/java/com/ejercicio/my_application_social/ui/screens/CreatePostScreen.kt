@@ -10,7 +10,6 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,6 +41,20 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
 
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
+    // Reseteamos el estado al entrar a la pantalla para evitar cierres automáticos si quedó en Success
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+
+    // Escuchamos cambios de estado para cerrar solo cuando sea un Success NUEVO
+    LaunchedEffect(state) {
+        if (state is PostState.Success) {
+            println("[CreatePostScreen] Post creado exitosamente, navegando al feed")
+            viewModel.resetState() // Limpiamos estado inmediatamente
+            nav.popBackStack()
+        }
+    }
+
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) imageUri = uri
     }
@@ -50,7 +63,7 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         if (success && tempCameraUri != null) {
             imageUri = tempCameraUri
         }
-        tempCameraUri = null
+        // No seteamos a null aquí para mantener la referencia si es necesaria
     }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
@@ -69,24 +82,6 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         }
     }
 
-    LaunchedEffect(state) {
-        if (state is PostState.Success) {
-            println("[CreatePostScreen] Post creado exitosamente, navegando al feed")
-            imageUri = null
-            tempCameraUri = null
-            description = ""
-            System.gc()
-            viewModel.resetState()
-            nav.popBackStack()
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.resetState()
-        }
-    }
-
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
@@ -95,8 +90,8 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
-                    when (PackageManager.PERMISSION_GRANTED) {
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        try {
                             val tempFile = File.createTempFile("camera_img", ".jpg", context.cacheDir)
                             tempCameraUri = FileProvider.getUriForFile(
                                 context,
@@ -104,8 +99,11 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
                                 tempFile
                             )
                             cameraLauncher.launch(tempCameraUri!!)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                        else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                     }
                 }) {
                     Text("Cámara")
@@ -142,9 +140,9 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         onSelectImageClick = { showImageSourceDialog = true },
         isLoading = state is PostState.Loading,
         onPublishClick = {
-            imageUri?.let { uri ->
+            if (imageUri != null) {
                 try {
-                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val inputStream = context.contentResolver.openInputStream(imageUri!!)
                     val file = File.createTempFile("upload", ".jpg", context.cacheDir)
                     val outputStream = FileOutputStream(file)
                     inputStream?.copyTo(outputStream)
@@ -152,9 +150,6 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
                     outputStream.close()
                     
                     viewModel.createPost(description, file)
-                    
-                    imageUri = null
-                    description = ""
                 } catch (e: Exception) {
                     println("[CreatePostScreen] Error al procesar imagen: ${e.message}")
                 }

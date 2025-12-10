@@ -7,7 +7,7 @@ import com.ejercicio.my_application_social.data.model.User
 import com.ejercicio.my_application_social.data.repository.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first // Mantenemos first() para obtener el token/ID del DataStore
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -20,7 +20,6 @@ sealed class PostState {
 
 class PostViewModel(private val repository: Repository) : ViewModel() {
 
-    // Mantenemos los StateFlow para exponer los datos a la UI.
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
     val posts = _posts.asStateFlow()
 
@@ -36,20 +35,14 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
     private val _state = MutableStateFlow<PostState>(PostState.Idle)
     val state = _state.asStateFlow()
 
-    // --- FUNCIONES DE CONSULTA (GET) ---
-
     fun getFeed() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                println("[PostViewModel] Cargando feed...")
                 val fetchedPosts = repository.getAllPosts()
-                println("[PostViewModel] Feed cargado: ${fetchedPosts.size} posts")
                 _posts.value = fetchedPosts
                 _state.value = PostState.Success
             } catch (e: Exception) {
-                println("[PostViewModel] Error al cargar feed: ${e.message}")
-                e.printStackTrace()
                 _state.value = PostState.Error(e.message ?: "Error al cargar el Feed")
             }
         }
@@ -59,11 +52,9 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                // Obtenemos el token/ID del usuario para hacer la consulta
                 val userIdStr = repository.currentAuthToken.first() ?: return@launch
                 val userId = userIdStr.toIntOrNull() ?: return@launch
 
-                // 🚨 CORRECCIÓN: Llamamos a la función suspend de la API
                 val userPosts = repository.getUserPosts(userId)
                 _myPosts.value = userPosts
                 _state.value = PostState.Success
@@ -77,7 +68,6 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                // 🚨 CORRECCIÓN: Llamamos a getMe() que usa el token de sesión
                 _currentUser.value = repository.getMe()
                 _state.value = PostState.Success
             } catch (e: Exception) {
@@ -85,42 +75,29 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
             }
         }
     }
+
     fun getPostById(postId: Int) {
+        // Importante: No ponemos Loading global aquí para no bloquear la UI si falla levemente
         viewModelScope.launch {
-            _state.value = PostState.Loading
             try {
-                // Llama a la función del Repository (que ahora usa la API)
                 _currentPost.value = repository.getPostById(postId)
-                _state.value = PostState.Idle
             } catch (e: Exception) {
                 _state.value = PostState.Error(e.message ?: "Error al cargar el post para editar.")
             }
         }
     }
 
-    // Ya no se usa para la API, los posts se obtienen en los listados
-    /* fun getPostById(postId: Int) {
-        // ...
-    } */
-
-    // --- FUNCIONES DE MUTACIÓN (POST/PUT/DELETE) ---
-
     fun createPost(desc: String, file: File) {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                println("[PostViewModel] Creando post...")
                 val newPost = repository.createPost(desc, file)
-                println("[PostViewModel] Post creado: ${newPost?.id}")
-
                 if (newPost != null) {
                     _state.value = PostState.Success
                 } else {
                     _state.value = PostState.Error("Error: Post vacío o fallo en el servidor.")
                 }
             } catch (e: Exception) {
-                println("[PostViewModel] Error al crear post: ${e.message}")
-                e.printStackTrace()
                 _state.value = PostState.Error(e.message ?: "Error al crear post")
             }
         }
@@ -130,11 +107,10 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             _state.value = PostState.Loading
             try {
-                // 🚨 CORRECCIÓN: Llamamos a la función API
                 repository.updatePostDescription(id, desc)
-
-                // Opcional: Refrescar el feed después de actualizar
-                getFeed()
+                // Refrescamos el post actual en memoria para que se vea el cambio
+                _currentPost.value = _currentPost.value?.copy(description = desc)
+                getFeed() // Opcional: refrescar feed
                 _state.value = PostState.Success
             } catch (e: Exception) {
                 _state.value = PostState.Error(e.message ?: "Error al actualizar")
@@ -147,6 +123,7 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
             try {
                 repository.deletePost(id)
                 getMyPosts()
+                getFeed() // Refrescar feed también
             } catch (e: Exception) {
                 _state.value = PostState.Error(e.message ?: "Error al eliminar")
             }
@@ -155,6 +132,6 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
 
     fun resetState() {
         _state.value = PostState.Idle
-        _currentPost.value = null
+        // No limpiamos _currentPost aquí para evitar parpadeo al salir de EditScreen
     }
 }

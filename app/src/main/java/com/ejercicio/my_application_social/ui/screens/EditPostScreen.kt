@@ -28,7 +28,9 @@ fun EditPostScreen(nav: NavController, viewModel: PostViewModel, postId: Int) {
     val state by viewModel.state.collectAsState()
     var description by remember { mutableStateOf("") }
 
-    LaunchedEffect(postId) {
+    // Reseteamos estado al entrar
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
         viewModel.getPostById(postId)
     }
 
