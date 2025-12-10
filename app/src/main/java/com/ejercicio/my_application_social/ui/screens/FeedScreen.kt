@@ -30,11 +30,10 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var hasError by remember { mutableStateOf(false) }
-    var isNavigating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.getFeed()
-        isNavigating = false
+        viewModel.resetState() // Aseguramos estado limpio al entrar
     }
 
     LaunchedEffect(state) {
@@ -69,22 +68,15 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
                 posts = posts,
                 isLoading = state is PostState.Loading,
                 onCreatePostClick = {
-                    if (!isNavigating) {
-                        isNavigating = true
-                        nav.navigate("create_post")
-                    }
+                    nav.navigate("create_post")
                 },
                 onProfileClick = {
-                    if (!isNavigating) {
-                        isNavigating = true
-                        nav.navigate("profile")
-                    }
+                    nav.navigate("profile")
                 },
                 snackbarHostState = snackbarHostState
             )
         }
     }
-
 }
 
 // Stateless
@@ -119,19 +111,17 @@ fun FeedContent(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
-            if (isLoading) {
+            if (isLoading && posts.isEmpty()) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             } else if (posts.isEmpty()) {
                 Text("No hay publicaciones, ¡sé el primero!", Modifier.align(Alignment.Center))
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(
-                        items = posts.filter { it.id > 0 }.take(20),
+                        items = posts,
                         key = { post -> post.id }
                     ) { post ->
-                        key(post.id) {
-                            PostCard(post = post)
-                        }
+                        PostCard(post = post)
                     }
                 }
             }

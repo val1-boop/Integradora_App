@@ -20,6 +20,10 @@ import com.ejercicio.my_application_social.ui.viewmodel.AuthViewModel
 fun RegisterScreen(nav: NavController, viewModel: AuthViewModel) {
     val state by viewModel.state.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+
     LaunchedEffect(state) {
         if (state is AuthState.Success) {
             viewModel.resetState()

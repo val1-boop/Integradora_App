@@ -22,6 +22,11 @@ import com.ejercicio.my_application_social.ui.viewmodel.AuthViewModel
 fun LoginScreen(nav: NavController, viewModel: AuthViewModel) {
     val state by viewModel.state.collectAsState()
 
+    // Limpiamos cualquier estado previo al entrar (ej: errores viejos o success de registro anterior)
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+
     // Manejo de efectos de navegación
     LaunchedEffect(state) {
         if (state is AuthState.Success) {

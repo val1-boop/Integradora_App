@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ejercicio.my_application_social.data.model.Post
 import com.ejercicio.my_application_social.ui.components.PostCard
@@ -21,11 +22,10 @@ import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 @Composable
 fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
     val posts by viewModel.myPosts.collectAsState()
-    var isNavigating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.getMyPosts()
-        isNavigating = false
+        viewModel.resetState()
     }
 
     MyPostsContent(
@@ -33,13 +33,9 @@ fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
         onBackClick = { nav.popBackStack() },
         onDeleteClick = { id -> viewModel.deletePost(id) },
         onEditClick = { id ->
-            if (!isNavigating) {
-                isNavigating = true
-                nav.navigate("edit_post/$id")
-            }
+            nav.navigate("edit_post/$id")
         }
     )
-
 }
 
 // Stateless
@@ -51,32 +47,36 @@ fun MyPostsContent(
     onDeleteClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit
 ) {
-    PhotoFeedTheme(useDarkTheme = true){
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mis Publicaciones") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+    PhotoFeedTheme(useDarkTheme = true) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Mis Publicaciones") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        Box(Modifier.padding(padding)) {
-            LazyColumn {
-                items(posts) { post ->
-                    PostCard(
-                        post = post,
-                        isMine = true,
-                        onDelete = { onDeleteClick(post.id) },
-                        onEdit = { onEditClick(post.id) }
-                    )
+                )
+            }
+        ) { padding ->
+            Box(Modifier.padding(padding)) {
+                if (posts.isEmpty()) {
+                     Text("No has publicado nada aún.", Modifier.padding(16.dp))
+                } else {
+                    LazyColumn {
+                        items(posts) { post ->
+                            PostCard(
+                                post = post,
+                                isMine = true,
+                                onDelete = { onDeleteClick(post.id) },
+                                onEdit = { onEditClick(post.id) }
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
     }
 }
 
@@ -87,7 +87,7 @@ fun MyPostsPreview() {
     val dummyPosts = listOf(
         Post(1, 1, "mi_usuario", null, "Mi primera foto", "", "image", "2023-10-20")
     )
-    PhotoFeedTheme (useDarkTheme = true){
+    PhotoFeedTheme(useDarkTheme = true) {
         MyPostsContent(posts = dummyPosts, onBackClick = {}, onDeleteClick = {}, onEditClick = {})
     }
 }

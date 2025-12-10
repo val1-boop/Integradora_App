@@ -35,6 +35,7 @@ fun ProfileScreen(nav: NavController, viewModel: PostViewModel, authViewModel: A
         onMyPostsClick = { nav.navigate("my_posts") },
         onLogoutClick = {
             authViewModel.logout()
+            // Limpiamos la pila de navegación al salir
             nav.navigate("login") { popUpTo(0) { inclusive = true } }
         }
     )
@@ -70,9 +71,10 @@ fun ProfileContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (user != null) {
+                    // CORRECCIÓN: Usamos user.avatar_url directamente, ya viene formateado desde el Repositorio
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data("http://10.0.2.2:8000${user.avatar_url}")
+                            .data(user.avatar_url) 
                             .crossfade(true)
                             .build(),
                         contentDescription = null,
