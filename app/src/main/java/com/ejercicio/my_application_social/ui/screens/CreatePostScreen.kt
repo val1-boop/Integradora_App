@@ -42,6 +42,16 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
 
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
+    val galleryPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            galleryLauncher.launch("image/*")
+        } else {
+            showPermissionDenied = true
+        }
+    }
+
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) imageUri = uri
     }
@@ -114,7 +124,12 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
             dismissButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
-                    galleryLauncher.launch("image/*")
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) -> {
+                            galleryLauncher.launch("image/*")
+                        }
+                        else -> galleryPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                    }
                 }) {
                     Text("Galería")
                 }
