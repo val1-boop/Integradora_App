@@ -1,20 +1,17 @@
 package com.ejercicio.my_application_social.ui.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ejercicio.my_application_social.data.model.Post
@@ -35,6 +32,8 @@ fun PrimaryButton(text: String, onClick: () -> Unit, isLoading: Boolean = false)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onEdit: () -> Unit = {}) {
+    var showFullImage by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -56,7 +55,6 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
                         post.media_url
                     }
                 } catch (e: Exception) {
-                    println("[PostCard] Error procesando URL: ${e.message}")
                     post.media_url
                 }
                 
@@ -65,17 +63,12 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
                         .data(model)
                         .size(1080, 1080)
                         .crossfade(false)
-                        .listener(
-                            onError = { _, result ->
-                                println("[PostCard] Error cargando imagen ID ${post.id}: ${result.throwable.message}")
-                            },
-                            onSuccess = { _, _ ->
-                                println("[PostCard] Imagen ID ${post.id} cargada")
-                            }
-                        )
                         .build(),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(250.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .clickable { showFullImage = true },
                     contentScale = ContentScale.Crop,
                     error = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery),
                     placeholder = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery)
@@ -90,6 +83,32 @@ fun PostCard(post: Post, isMine: Boolean = false, onDelete: () -> Unit = {}, onE
                     TextButton(onClick = onEdit) { Text("Editar") }
                     TextButton(onClick = onDelete) { Text("Eliminar", color = Color.Red) }
                 }
+            }
+        }
+    }
+    
+    if (showFullImage) {
+        Dialog(onDismissRequest = { showFullImage = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { showFullImage = false },
+                contentAlignment = Alignment.Center
+            ) {
+                val context = LocalContext.current
+                val model = try {
+                    if (File(post.media_url).exists()) File(post.media_url) else post.media_url
+                } catch (e: Exception) {
+                    post.media_url
+                }
+                
+                AsyncImage(
+                    model = model,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
             }
         }
     }

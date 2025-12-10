@@ -30,9 +30,11 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var hasError by remember { mutableStateOf(false) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.getFeed()
+        isNavigating = false
     }
 
     LaunchedEffect(state) {
@@ -66,12 +68,23 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
             FeedContent(
                 posts = posts,
                 isLoading = state is PostState.Loading,
-                onCreatePostClick = { nav.navigate("create_post") },
-                onProfileClick = { nav.navigate("profile") },
+                onCreatePostClick = {
+                    if (!isNavigating) {
+                        isNavigating = true
+                        nav.navigate("create_post")
+                    }
+                },
+                onProfileClick = {
+                    if (!isNavigating) {
+                        isNavigating = true
+                        nav.navigate("profile")
+                    }
+                },
                 snackbarHostState = snackbarHostState
             )
         }
     }
+
 }
 
 // Stateless

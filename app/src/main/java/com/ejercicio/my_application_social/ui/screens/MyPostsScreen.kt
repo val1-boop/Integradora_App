@@ -21,17 +21,25 @@ import com.ejercicio.my_application_social.ui.viewmodel.PostViewModel
 @Composable
 fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
     val posts by viewModel.myPosts.collectAsState()
+    var isNavigating by remember { mutableStateOf(false) }
 
-    LaunchedEffect(nav.currentBackStackEntry) {
+    LaunchedEffect(Unit) {
         viewModel.getMyPosts()
+        isNavigating = false
     }
 
     MyPostsContent(
         posts = posts,
         onBackClick = { nav.popBackStack() },
         onDeleteClick = { id -> viewModel.deletePost(id) },
-        onEditClick = { id -> nav.navigate("edit_post/$id") } // Fix: Navegar con argumento ID
+        onEditClick = { id ->
+            if (!isNavigating) {
+                isNavigating = true
+                nav.navigate("edit_post/$id")
+            }
+        }
     )
+
 }
 
 // Stateless
