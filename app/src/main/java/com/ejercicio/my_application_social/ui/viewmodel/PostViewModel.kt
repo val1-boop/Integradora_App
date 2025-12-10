@@ -77,7 +77,6 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
     }
 
     fun getPostById(postId: Int) {
-        // Importante: No ponemos Loading global aquí para no bloquear la UI si falla levemente
         viewModelScope.launch {
             try {
                 _currentPost.value = repository.getPostById(postId)
@@ -93,6 +92,9 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
             try {
                 val newPost = repository.createPost(desc, file)
                 if (newPost != null) {
+                    // Refrescar Feed y Mis Posts al crear
+                    getFeed()
+                    getMyPosts() 
                     _state.value = PostState.Success
                 } else {
                     _state.value = PostState.Error("Error: Post vacío o fallo en el servidor.")
@@ -108,9 +110,13 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
             _state.value = PostState.Loading
             try {
                 repository.updatePostDescription(id, desc)
-                // Refrescamos el post actual en memoria para que se vea el cambio
+                // Refrescamos el post actual
                 _currentPost.value = _currentPost.value?.copy(description = desc)
-                getFeed() // Opcional: refrescar feed
+                
+                // IMPORTANTE: Refrescar ambas listas para que al volver se vean los cambios
+                getFeed() 
+                getMyPosts()
+                
                 _state.value = PostState.Success
             } catch (e: Exception) {
                 _state.value = PostState.Error(e.message ?: "Error al actualizar")
@@ -123,7 +129,7 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
             try {
                 repository.deletePost(id)
                 getMyPosts()
-                getFeed() // Refrescar feed también
+                getFeed() 
             } catch (e: Exception) {
                 _state.value = PostState.Error(e.message ?: "Error al eliminar")
             }
@@ -132,6 +138,5 @@ class PostViewModel(private val repository: Repository) : ViewModel() {
 
     fun resetState() {
         _state.value = PostState.Idle
-        // No limpiamos _currentPost aquí para evitar parpadeo al salir de EditScreen
     }
 }
