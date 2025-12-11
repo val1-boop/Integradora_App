@@ -63,7 +63,7 @@ class Repository(
     suspend fun login(request: LoginRequest): Result<AuthResponse> {
         return try {
             val response = apiService.login(request)
-            // 🚨 CORRECCIÓN: Si el servidor devuelve 200/201, extraemos el body. Si es null, es un error.
+            //CORRECCIÓN: Si el servidor devuelve 200/201, extraemos el body. Si es null, es un error.
             val authResponse = response.body() ?: throw IllegalStateException("Respuesta de login vacía")
             saveSession(authResponse.token)
             Result.success(authResponse)

@@ -45,6 +45,7 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
             }
             is PostState.Success -> {
                 hasError = false
+                viewModel.resetState()
             }
             else -> {}
         }
@@ -64,8 +65,12 @@ fun FeedScreen(nav: NavController, viewModel: PostViewModel) {
             FeedContent(
                 posts = posts,
                 isLoading = state is PostState.Loading,
-                onCreatePostClick = { nav.navigate("create_post") },
-                onProfileClick = { nav.navigate("profile") },
+                onCreatePostClick = remember { 
+                    { nav.navigate("create_post") }
+                },
+                onProfileClick = remember {
+                    { nav.navigate("profile") }
+                },
                 snackbarHostState = snackbarHostState
             )
         }

@@ -1,0 +1,22 @@
+CORRECCIÓN PARA EL SERVIDOR FLASK
+==================================
+
+En la función update_post (línea ~380), reemplaza:
+
+        cursor.execute("SELECT * FROM posts WHERE id = ?", (post_id,))
+        updated_post = cursor.fetchone()
+
+POR:
+
+        cursor.execute("""
+            SELECT 
+                p.*, 
+                u.username, 
+                u.avatar_url AS user_avatar 
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.id = ?
+        """, (post_id,))
+        updated_post = cursor.fetchone()
+
+Esto asegura que el post actualizado incluya los datos del usuario (username y avatar).

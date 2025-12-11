@@ -35,7 +35,8 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
     var description by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
-    var showPermissionDenied by remember { mutableStateOf(false) }
+    var showCameraPermissionDenied by remember { mutableStateOf(false) }
+    var showGalleryPermissionDenied by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -52,9 +53,19 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         if (isGranted) {
             galleryLauncher.launch("image/*")
         } else {
-            showPermissionDenied = true
+            showGalleryPermissionDenied = true
         }
     }
+
+    val getGalleryPermission = {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+    }
+
+
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success && tempCameraUri != null) {
@@ -75,19 +86,15 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
             )
             cameraLauncher.launch(tempCameraUri!!)
         } else {
-            showPermissionDenied = true
+            showCameraPermissionDenied = true
         }
     }
 
+
     LaunchedEffect(state) {
         if (state is PostState.Success) {
-            println("[CreatePostScreen] Post creado exitosamente, navegando al feed")
-            imageUri = null
-            tempCameraUri = null
-            description = ""
-            System.gc()
-            viewModel.resetState()
             nav.popBackStack()
+            viewModel.resetState()
         }
     }
 
@@ -124,11 +131,12 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
             dismissButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
+                    val permission = getGalleryPermission()
                     when (PackageManager.PERMISSION_GRANTED) {
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) -> {
+                        ContextCompat.checkSelfPermission(context, permission) -> {
                             galleryLauncher.launch("image/*")
                         }
-                        else -> galleryPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                        else -> galleryPermissionLauncher.launch(permission)
                     }
                 }) {
                     Text("Galería")
@@ -137,13 +145,26 @@ fun CreatePostScreen(nav: NavController, viewModel: PostViewModel) {
         )
     }
 
-    if (showPermissionDenied) {
+    if (showCameraPermissionDenied) {
         AlertDialog(
-            onDismissRequest = { showPermissionDenied = false },
-            title = { Text("Permiso denegado") },
+            onDismissRequest = { showCameraPermissionDenied = false },
+            title = { Text("Permiso de cámara denegado") },
             text = { Text("Se necesita permiso de cámara para tomar fotos. Puedes habilitarlo en Configuración.") },
             confirmButton = {
-                TextButton(onClick = { showPermissionDenied = false }) {
+                TextButton(onClick = { showCameraPermissionDenied = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showGalleryPermissionDenied) {
+        AlertDialog(
+            onDismissRequest = { showGalleryPermissionDenied = false },
+            title = { Text("Permiso de galería denegado") },
+            text = { Text("Se necesita permiso para acceder a las imágenes. Puedes habilitarlo en Configuración.") },
+            confirmButton = {
+                TextButton(onClick = { showGalleryPermissionDenied = false }) {
                     Text("OK")
                 }
             }

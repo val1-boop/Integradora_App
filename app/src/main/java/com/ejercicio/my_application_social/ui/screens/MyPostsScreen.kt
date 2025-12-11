@@ -29,7 +29,9 @@ fun MyPostsScreen(nav: NavController, viewModel: PostViewModel) {
         posts = posts,
         onBackClick = { nav.popBackStack() },
         onDeleteClick = { id -> viewModel.deletePost(id) },
-        onEditClick = { id -> nav.navigate("edit_post/$id") }
+        onEditClick = remember {
+            { id -> nav.navigate("edit_post/$id") }
+        }
     )
 }
 
